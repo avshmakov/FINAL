@@ -20,41 +20,29 @@ CREATE TABLE scheduler (
 CREATE INDEX date_index ON scheduler (date)
 `
 
-// Init(dbFile string) error
+var DB *sql.DB
+
 func Init(dbFile string) error {
-	var DB *sql.DB
 	var err error
 	_, err = os.Stat(dbFile)
+	flag := os.IsNotExist(err)
 
+	// Открываем соединение с БД
+	DB, err = sql.Open("sqlite", dbFile)
 	if err != nil {
-		fmt.Println("Database is absent, creating scheduler.db")
-		file, err := os.Create(dbFile)
-		if err != nil {
-			return err
-		}
-		defer file.Close()
-		fmt.Println("scheduler.db was created")
-		// Открываем соединение с БД
-		DB, err := sql.Open("sqlite", dbFile)
-		if err != nil {
-			fmt.Println("failed to open DB")
-			return err
-		}
-		defer DB.Close()
-
-		_, err = DB.Exec(schema)
-		if err != nil {
-			fmt.Println("failed to create table")
-			return err
-		}
-		fmt.Println("Table scheduler was created!")
-	} else {
-		fmt.Println("Database ok")
-		DB, err = sql.Open("sqlite", dbFile)
-		if err != nil {
-			return err
-		}
-		defer DB.Close()
+		fmt.Println("failed to open DB")
+		return err
 	}
+
+	if err = DB.Ping(); err != nil {
+		return fmt.Errorf("error ping DB: %v", err)
+	}
+	if flag {
+		if _, err = DB.Exec(schema); err != nil {
+			return fmt.Errorf("error create schema: %v", err)
+		}
+	}
+	fmt.Println("Database OK")
 	return nil
+
 }

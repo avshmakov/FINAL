@@ -2,25 +2,25 @@ package nextdate
 
 import (
 	"errors"
-	//"fmt"
+
 	"strconv"
 	"time"
 )
 
+//const DateFormat = "20060102"
+
 func NextDate(nowtime time.Time, dstart string, repeat string) (string, error) {
 	//проверка пустой или нет repeat
 	if len(repeat) == 0 {
-		//return "repeat is empty", nil
+
 		return "", errors.New("repeat is empty")
 	}
 
 	//разбираем dstart на соответствие формата
-	parsedTime, err := time.Parse("20060102", dstart)
+	parsedTime, err := time.Parse(DateFormat, dstart)
 	if err != nil {
-		//fmt.Println("Ошибка при разборе даты dstart", err)
 		return "", errors.New("error parse dstart")
 	}
-	//fmt.Println("dstart:", parsedTime)
 
 	//если другой формат repeat. в моём случае только 2 варианта "d " и "y"
 	if len(repeat) > 3 {
@@ -47,20 +47,17 @@ func NextDate(nowtime time.Time, dstart string, repeat string) (string, error) {
 			}
 
 		}
-		return parsedTime.Format("20060102"), nil
+		return parsedTime.Format(DateFormat), nil
 	}
 
 	repeat = repeat[2:] // Удаляем первые 2 символа
 	//если repeat цифра
 	num, err := strconv.Atoi(repeat)
 	if err != nil {
-		//fmt.Println("неподдерживаемый формат repeat:", err)
 		return "", errors.New("wrong format repeat")
 	}
-	//fmt.Println("repeat:", num)
 
 	if num > 400 {
-		//fmt.Println("repeat > 400")
 		return "", errors.New("repeat > 400")
 	}
 
@@ -71,6 +68,6 @@ func NextDate(nowtime time.Time, dstart string, repeat string) (string, error) {
 		}
 	}
 
-	return parsedTime.Format("20060102"), nil
+	return parsedTime.Format(DateFormat), nil
 
 }

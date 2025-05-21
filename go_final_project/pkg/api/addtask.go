@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"time"
 
-	dbase "github.com/avshmakov/FINAL/pkg/db"
+	dbase "go1f/pkg/db" //"github.com/avshmakov/FINAL/pkg/db"
 )
 
 var task dbase.Task
@@ -24,27 +24,20 @@ func addTaskHandler(w http.ResponseWriter, r *http.Request) {
 		Error string `json:"error"`
 	}
 
-	type answerjson struct {
-		id string `json:"id"`
-	}
-
 	var buf bytes.Buffer
 	// читаем тело запроса
 
 	_, err := buf.ReadFrom(r.Body)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
-		fmt.Println("ошибка тело запроса ")
+		//fmt.Println("ошибка тело запроса ")
 		return
 	}
-	//fmt.Println("*****************************************************************")
-	//fmt.Println("r.body = ", buf.String())
-
 	// десериализуем JSON
 	fmt.Println("*****************************************************************")
 	if err = json.Unmarshal(buf.Bytes(), &task); err != nil {
 		http.Error(w, "ошибка десериализации JSON", http.StatusBadRequest)
-		fmt.Println("ошибка десериализации JSON = ")
+		//fmt.Println("ошибка десериализации JSON = ")
 		return
 	}
 
@@ -52,94 +45,25 @@ func addTaskHandler(w http.ResponseWriter, r *http.Request) {
 		return // Ошибка уже обработана в функции
 	}
 
-	//+++++
-	/*
-		fmt.Println("task.TITLE = ", task.TITLE)
-		fmt.Println("task.COMMENT = ", task.COMMENT)
-		fmt.Println("task.Date = ", task.Date)
-		fmt.Println("task.Repeat = ", task.REPEAT)
-
-		// Проверяем пустой или нет  заголовок title
-		if len(task.TITLE) == 0 {
-			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(http.StatusBadRequest)
-			json.NewEncoder(w).Encode(errorjson{Error: "Не указан заголовок задачи"})
-			return
-		}
-
-		// Проверить на корректность полученное значение task.Date
-		now := time.Now()
-		//var t,nextd time.Ticker
-		//если task.Date пустая строка, то присваиваем ему текущее время now.Format("20060102");
-		if len(task.Date) == 0 {
-			task.Date = now.Format("20060102")
-		} else {
-			//проверяем, что в task.Date указана корректная дата t, err := time.Parse("20060102", task.Date). t нам ещё пригодится
-			t, err := time.Parse("20060102", task.Date)
-			if err != nil {
-
-				w.Header().Set("Content-Type", "application/json")
-				w.WriteHeader(http.StatusBadRequest)
-				json.NewEncoder(w).Encode(errorjson{Error: "дата представлена в формате, отличном от 20060102"})
-				return
-			}
-			//fmt.Println("Полет нормальный 1")
-			var nextd string // Объявляем переменную заранее
-			//если определён task.Repeat, то проверяем корректность правила и заодно получаем следующую дату next, err = NextDate(now, task.Date, task.Repeat);
-			if len(task.REPEAT) > 0 {
-				fmt.Println("input NextDate ", task.Date)
-				nextd, err = NextDate(now, task.Date, task.REPEAT)
-				if err != nil {
-
-					w.Header().Set("Content-Type", "application/json")
-					w.WriteHeader(http.StatusBadRequest)
-					json.NewEncoder(w).Encode(errorjson{Error: "ошибка  NextDate"})
-					return
-
-				}
-				fmt.Println("output NextDate ", nextd)
-			}
-
-			//fmt.Println("++++++")
-			//fmt.Println("now = ", now)
-			//fmt.Println("t = ", t)
-			//fmt.Println("++++++")
-
-			//if now.After(t) {
-			if afterNow(now, t) {
-				fmt.Println("if now.After(t)")
-				if len(task.REPEAT) == 0 {
-					// если правила повторения нет, то берём сегодняшнее число
-					task.Date = now.Format("20060102")
-					fmt.Println("if len(task.REPEAT) == 0", task.Date)
-				} else {
-					// в противном случае, берём вычисленную ранее следующую дату
-					task.Date = nextd
-					fmt.Println("task.Date = nextd", nextd)
-				}
-			}
-
-		}
-	*/
-	//+++++
-	//fmt.Println("Полет нормальный 3")
-
-	id, err1 := dbase.AddTask(&task)
-	if err1 != nil {
+	id, err := dbase.AddTask(&task)
+	if err != nil {
 
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(errorjson{
-			Error: "ошибка AddTask",
-		})
-
+		//json.NewEncoder(w).Encode(errorjson{Error: "ошибка AddTask",})
+		if err = json.NewEncoder(w).Encode(errorjson{Error: "ошибка AddTask"}); err != nil {
+			http.Error(w, "Failed to encode error response", http.StatusInternalServerError)
+		}
 		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(map[string]interface{}{"id": id})
-
+	//json.NewEncoder(w).Encode(map[string]interface{}{"id": id})
+	if err = json.NewEncoder(w).Encode(map[string]interface{}{"id": id}); err != nil {
+		http.Error(w, "error response", http.StatusInternalServerError)
+	}
+	return
 }
 
 func validateAndAdjustTask(task *dbase.Task, w http.ResponseWriter) bool {
@@ -147,13 +71,13 @@ func validateAndAdjustTask(task *dbase.Task, w http.ResponseWriter) bool {
 		Error string `json:"error"`
 	}
 
-	fmt.Println("task.TITLE = ", task.TITLE)
-	fmt.Println("task.COMMENT = ", task.COMMENT)
+	fmt.Println("task.TITLE = ", task.Title)
+	fmt.Println("task.COMMENT = ", task.Comment)
 	fmt.Println("task.Date = ", task.Date)
-	fmt.Println("task.Repeat = ", task.REPEAT)
+	fmt.Println("task.Repeat = ", task.Repeat)
 
 	// Проверяем пустой или нет заголовок title
-	if len(task.TITLE) == 0 {
+	if len(task.Title) == 0 {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusBadRequest)
 		json.NewEncoder(w).Encode(errorjson{Error: "Не указан заголовок задачи"})
@@ -163,9 +87,9 @@ func validateAndAdjustTask(task *dbase.Task, w http.ResponseWriter) bool {
 	// Проверить на корректность полученное значение task.Date
 	now := time.Now()
 	if len(task.Date) == 0 {
-		task.Date = now.Format("20060102")
+		task.Date = now.Format(DateFormat)
 	} else {
-		t, err := time.Parse("20060102", task.Date)
+		t, err := time.Parse(DateFormat, task.Date)
 		if err != nil {
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusBadRequest)
@@ -174,9 +98,9 @@ func validateAndAdjustTask(task *dbase.Task, w http.ResponseWriter) bool {
 		}
 
 		var nextd string
-		if len(task.REPEAT) > 0 {
+		if len(task.Repeat) > 0 {
 			fmt.Println("input NextDate ", task.Date)
-			nextd, err = NextDate(now, task.Date, task.REPEAT)
+			nextd, err = NextDate(now, task.Date, task.Repeat)
 			if err != nil {
 				w.Header().Set("Content-Type", "application/json")
 				w.WriteHeader(http.StatusBadRequest)
@@ -188,8 +112,8 @@ func validateAndAdjustTask(task *dbase.Task, w http.ResponseWriter) bool {
 
 		if afterNow(now, t) {
 			fmt.Println("if now.After(t)")
-			if len(task.REPEAT) == 0 {
-				task.Date = now.Format("20060102")
+			if len(task.Repeat) == 0 {
+				task.Date = now.Format(DateFormat)
 				fmt.Println("if len(task.REPEAT) == 0", task.Date)
 			} else {
 				task.Date = nextd

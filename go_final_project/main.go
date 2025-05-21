@@ -2,28 +2,29 @@ package main
 
 import (
 	"fmt"
-	//nextdate "go1f/pkg/api"
 	dbase "go1f/pkg/db"
 	"go1f/pkg/server"
-	//"time"
 )
 
-//var Install bool
-
+// go clean -testcache
 func main() {
 	var err error
 	dbFile := "scheduler.db"
 
 	err = dbase.Init(dbFile)
+
+	fmt.Println("DB= ", dbase.DB)
 	if err != nil {
 		fmt.Println(err)
 	}
 
+	defer dbase.DB.Close()
+
 	fmt.Println("Запускаем сервер")
-	err = server.Run() //http.ListenAndServe(":8080", nil)
+	err = server.Run()
 
 	if err != nil {
 		panic(err)
 	}
-	fmt.Println("Завершаем работу")
+
 }

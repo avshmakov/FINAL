@@ -8,15 +8,16 @@ import (
 	"github.com/go-chi/chi/v5"
 )
 
+const DateFormat = "20060102"
+
 func nextDayHandler(res http.ResponseWriter, req *http.Request) {
-	//fmt.Println("*******************")
 	gnow := req.URL.Query().Get("now")
 	if gnow == "" {
 		res.WriteHeader(http.StatusBadRequest)
 		res.Write([]byte("now missing"))
 		return
 	}
-	parsTime, err := time.Parse("20060102", gnow)
+	parsTime, err := time.Parse(DateFormat, gnow)
 	if err != nil {
 		fmt.Println("Ошибка при разборе даты dstart", err)
 		return
@@ -107,11 +108,9 @@ func donehandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func Init() *chi.Mux {
-	fmt.Println("chi")
 
 	rout := chi.NewRouter()
 	rout.Handle("/*", http.FileServer(http.Dir("web")))
-
 	rout.Get("/api/nextdate", nextDayHandler)
 	rout.Post("/api/task", taskHandler)
 	rout.Get("/api/tasks", selectTaskHandler)
@@ -122,18 +121,3 @@ func Init() *chi.Mux {
 
 	return rout
 }
-
-/*
-func Init() {
-
-	//http.HandleFunc("/api/nextdate", nextDayHandler)
-	//http.HandleFunc("/api/task", taskHandler)
-	//http.HandleFunc("/api/tasks", selectTaskHandler)
-	//http.HandleFunc("/api/task/{id}", onetaskkHandler)
-    r := chi.NewRouter()
-	r.Get("/api/nextdate", nextDayHandler)
-	r.Post("/api/task", taskHandler)
-	r.Get("/api/tasks", selectTaskHandler)
-	r.Get("/api/taskq/{id}", onetaskkHandler)
-}
-*/

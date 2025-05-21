@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"time"
 
-	dbase "github.com/avshmakov/FINAL/pkg/db"
+	dbase "go1f/pkg/db" // "github.com/avshmakov/FINAL/pkg/db"
 )
 
 type TasksResp struct {
@@ -40,7 +40,6 @@ func getTaskHandler(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 	// записываем сериализованные в JSON данные в тело ответа
 	w.Write(resp)
-	//writeJson(w, TasksResp{	Tasks: tasks,})
 
 }
 
@@ -52,7 +51,6 @@ func getoneTaskHandler(w http.ResponseWriter, r *http.Request) {
 		Error string `json:"error"`
 	}
 	id := r.URL.Query().Get("id") // Теперь получаем id из query-параметра
-	//fmt.Println("id=", id)
 
 	task, err := dbase.GetTask(id) // в параметре максимальное количество записей
 	if err != nil {
@@ -74,7 +72,6 @@ func getoneTaskHandler(w http.ResponseWriter, r *http.Request) {
 // ********************************************************
 func putTaskHandler(w http.ResponseWriter, r *http.Request) {
 	var buf bytes.Buffer
-	//fmt.Println("------------------putaskkHandler------------------")
 	type errorjson struct {
 		Error string `json:"error"`
 	}
@@ -83,9 +80,6 @@ func putTaskHandler(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusInternalServerError)
 		json.NewEncoder(w).Encode(errorjson{Error: "read body error"})
-
-		//http.Error(w, err.Error(), http.StatusBadRequest)
-		//fmt.Println("ошибка putTaskHandler тело запроса ")
 		return
 	}
 	fmt.Println("r.body = ", buf.String())
@@ -105,7 +99,6 @@ func putTaskHandler(w http.ResponseWriter, r *http.Request) {
 		json.NewEncoder(w).Encode(errorjson{Error: "UpdateTask"})
 		return
 	}
-	//resp, err := json.MarshalIndent(task, "", "    ")
 	// в заголовок записываем тип контента,  данные в формате JSON
 	w.Header().Set("Content-Type", "application/json")
 	// так как все успешно, то статус OK
@@ -117,27 +110,25 @@ func putTaskHandler(w http.ResponseWriter, r *http.Request) {
 // *******************************************
 func delTaskHandler(w http.ResponseWriter, r *http.Request) {
 
-	fmt.Println("------------------delTaskHandler------------------")
 	type errorjson struct {
 		Error string `json:"error"`
 	}
 
 	idStr := r.URL.Query().Get("id")
-	fmt.Println("idStr= ", idStr)
 	if idStr == "" {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusInternalServerError)
 		json.NewEncoder(w).Encode(errorjson{Error: "ID query error"})
 		return
 	}
-	err := dbase.DelTask(idStr)
+	err := dbase.DeleteTask(idStr)
 	if err != nil {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(errorjson{Error: "DelTask error"})
+		json.NewEncoder(w).Encode(errorjson{Error: "DeleteTask error"})
 		return
 	}
-	fmt.Println("OK")
+
 	w.Header().Set("Content-Type", "application/json")
 	// так как все успешно, то статус OK
 	w.WriteHeader(http.StatusOK)
@@ -149,13 +140,11 @@ func delTaskHandler(w http.ResponseWriter, r *http.Request) {
 // *******************************************
 func doneTaskHandler(w http.ResponseWriter, r *http.Request) {
 
-	fmt.Println("------------------doneTaskHandler------------------")
 	type errorjson struct {
 		Error string `json:"error"`
 	}
 
 	idStr := r.URL.Query().Get("id")
-	//fmt.Println("idStr= ", idStr)
 	if idStr == "" {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusInternalServerError)
@@ -171,23 +160,23 @@ func doneTaskHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	//Одноразовая задача с пустым полем repeat удаляется.
-	if len(task.REPEAT) == 0 {
-		err := dbase.DelTask(idStr)
+	if len(task.Repeat) == 0 {
+		err := dbase.DeleteTask(idStr)
 		if err != nil {
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusInternalServerError)
-			json.NewEncoder(w).Encode(errorjson{Error: "DelTask error"})
+			json.NewEncoder(w).Encode(errorjson{Error: "DeleteTask error"})
 			return
 		}
 	} else {
 		var nextd string
 		now := time.Now()
-		nextd, err = NextDate(now, task.Date, task.REPEAT)
+		nextd, err = NextDate(now, task.Date, task.Repeat)
 		err = dbase.UpdateDate(nextd, idStr)
 		if err != nil {
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusInternalServerError)
-			json.NewEncoder(w).Encode(errorjson{Error: "DelTask error"})
+			json.NewEncoder(w).Encode(errorjson{Error: "DeleteTask error"})
 			return
 		}
 
